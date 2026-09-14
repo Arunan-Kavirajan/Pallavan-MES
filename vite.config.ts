@@ -4,7 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: './',
   plugins: [
     react(),
     tailwindcss(),
@@ -15,7 +14,7 @@ export default defineConfig({
         name: 'Pallavan Precision Works MES',
         short_name: 'Pallavan MES',
         description: 'Shift Production Entry System for ApexFlow Technologies',
-        theme_color: '#2563eb', // blue-600
+        theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [
@@ -34,7 +33,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         cleanupOutdatedCaches: true,
-        navigateFallbackDenylist: [/^\/downloads/]
+        maximumFileSizeToCacheInBytes: 5000000
       }
     })
   ],
