@@ -43,8 +43,7 @@ class FirebaseService {
    */
   async syncEntryToCloud(entry: ProductionEntry): Promise<void> {
     if (!this.isEnabled || !this.db) {
-      // Emulation mode - zero config required!
-      return Promise.resolve();
+      throw new Error("Firebase is not configured. Entry remains pending for retroactive sync.");
     }
 
     try {

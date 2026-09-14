@@ -4,8 +4,6 @@ import { firebaseService } from '../services/firebaseService';
 
 interface SyncContextType {
   isOnline: boolean;
-  isSimulatingOffline: boolean;
-  toggleOfflineSimulation: () => void;
   pendingCount: number;
   syncNow: () => Promise<void>;
 }
@@ -14,7 +12,6 @@ const SyncContext = createContext<SyncContextType | undefined>(undefined);
 
 export const SyncProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  const [isSimulatingOffline, setIsSimulatingOffline] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
   // Real offline detection
@@ -54,14 +51,8 @@ export const SyncProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  const effectivelyOnline = isOnline && !isSimulatingOffline;
-
-  const toggleOfflineSimulation = () => {
-    setIsSimulatingOffline(prev => !prev);
-  };
-
   const syncNow = async () => {
-    if (!effectivelyOnline) return;
+    if (!isOnline) return;
     
     // 1. Fetch pending
     const allPending = await db.entries.where('syncStatus').equals('pending').toArray();
@@ -90,16 +81,14 @@ export const SyncProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Auto-sync when coming back online
   useEffect(() => {
-    if (effectivelyOnline && pendingCount > 0) {
+    if (isOnline && pendingCount > 0) {
       syncNow();
     }
-  }, [effectivelyOnline, pendingCount]);
+  }, [isOnline, pendingCount]);
 
   return (
     <SyncContext.Provider value={{
-      isOnline: effectivelyOnline,
-      isSimulatingOffline,
-      toggleOfflineSimulation,
+      isOnline,
       pendingCount,
       syncNow
     }}>

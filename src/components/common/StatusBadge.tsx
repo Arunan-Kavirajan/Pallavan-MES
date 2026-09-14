@@ -1,6 +1,7 @@
 import React from 'react';
 import { EntryStatus, SyncStatus } from '../../types/domain';
 import { CheckCircle, Clock, AlertCircle, FileEdit, CloudOff } from 'lucide-react';
+import { firebaseService } from '../../services/firebaseService';
 
 export const StatusBadge: React.FC<{ status: EntryStatus }> = ({ status }) => {
   switch (status) {
@@ -34,6 +35,8 @@ export const StatusBadge: React.FC<{ status: EntryStatus }> = ({ status }) => {
 };
 
 export const SyncBadge: React.FC<{ syncStatus: SyncStatus }> = ({ syncStatus }) => {
+  if (!firebaseService.isEnabled) return null; // Don't show sync badges if no cloud configured
+  
   if (syncStatus === 'synced') return null; // Don't clutter UI if synced
 
   if (syncStatus === 'pending') {
