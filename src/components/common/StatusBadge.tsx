@@ -38,8 +38,8 @@ export const SyncBadge: React.FC<{ syncStatus: SyncStatus }> = ({ syncStatus }) 
 
   if (syncStatus === 'pending') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 ml-2 border border-amber-200">
-        <CloudOff size={10} className="mr-1" /> Offline
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 ml-2 border border-amber-200" title="Waiting for network to sync to cloud">
+        <CloudOff size={10} className="mr-1" /> Pending Sync
       </span>
     );
   }
