@@ -67,7 +67,7 @@ export default function Dashboard() {
             </button>
           )}
 
-          {(currentUser.role === 'Manager' || currentUser.role === 'Supervisor') && (
+          {currentUser.role === 'Manager' && (
             <>
               <button
                 onClick={() => setActiveView('analytics')}
