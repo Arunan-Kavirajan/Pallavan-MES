@@ -51,6 +51,20 @@ export const SyncProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
+  // Subscribe to cloud changes when online
+  useEffect(() => {
+    if (!isOnline) return;
+
+    // This listener automatically pushes updates from Firebase down to IndexedDB
+    const unsubscribe = firebaseService.subscribeToChanges(async (cloudEntries) => {
+      // Import the storage service to perform bulk upsert
+      const { StorageService } = await import('../services/storageService');
+      await StorageService.upsertCloudEntries(cloudEntries);
+    });
+
+    return () => unsubscribe();
+  }, [isOnline]);
+
   const syncNow = async () => {
     if (!isOnline) return;
     

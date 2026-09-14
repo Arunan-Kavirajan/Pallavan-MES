@@ -7,25 +7,20 @@ import { StorageService } from '../../services/storageService';
 import { FileSpreadsheet, FileText, CheckCircle, AlertCircle, FileCheck, Eye } from 'lucide-react';
 import { StatusBadge } from '../common/StatusBadge';
 
+import { useLiveQuery } from 'dexie-react-hooks';
+
 export default function ExportPanel() {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [shift, setShift] = useState<Shift>('A');
-  const [matchingEntries, setMatchingEntries] = useState<ProductionEntry[]>([]);
-  const [loading, setLoading] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   // Live lookup of matching entries
-  useEffect(() => {
-    async function checkEntries() {
-      setLoading(true);
-      const entries = await StorageService.getEntriesByDateAndShift(date, shift);
-      // NEVER export or show drafts in the export panel
-      const nonDrafts = entries.filter(e => e.status !== 'Draft');
-      setMatchingEntries(nonDrafts);
-      setLoading(false);
-    }
-    checkEntries();
-  }, [date, shift]);
+  const matchingEntries = useLiveQuery(async () => {
+    const entries = await StorageService.getEntriesByDateAndShift(date, shift);
+    return entries.filter(e => e.status !== 'Draft');
+  }, [date, shift]) || [];
+  
+  const loading = matchingEntries === undefined;
 
   const handleExport = async (type: 'excel' | 'pdf') => {
     if (matchingEntries.length === 0) {

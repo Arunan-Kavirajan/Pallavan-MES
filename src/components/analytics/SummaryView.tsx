@@ -8,10 +8,9 @@ import {
 import { format, subDays, parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { Calendar, Filter, AlertTriangle, CheckCircle, TrendingUp, Clock } from 'lucide-react';
 
-export default function SummaryView() {
-  const [entries, setEntries] = useState<ProductionEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+import { useLiveQuery } from 'dexie-react-hooks';
 
+export default function SummaryView() {
   // Date range filter: default to last 30 days
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const thirtyDaysAgoStr = format(subDays(new Date(), 30), 'yyyy-MM-dd');
@@ -20,14 +19,11 @@ export default function SummaryView() {
   const [endDate, setEndDate] = useState(todayStr);
   const [selectedMachine, setSelectedMachine] = useState<string>('ALL');
 
-  useEffect(() => {
-    async function load() {
-      const all = await StorageService.getAllEntries();
-      setEntries(all);
-      setLoading(false);
-    }
-    load();
-  }, []);
+  const entries = useLiveQuery(async () => {
+    return await StorageService.getAllEntries();
+  }) || [];
+  
+  const loading = entries === undefined;
 
   // Filter entries across chosen date range and status (Approved or Submitted)
   const filteredEntries = useMemo(() => {

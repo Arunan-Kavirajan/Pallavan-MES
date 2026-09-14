@@ -25,6 +25,21 @@ export const StorageService = {
     return entry;
   },
 
+  async upsertCloudEntries(cloudEntries: ProductionEntry[]): Promise<void> {
+    // Fetch all currently pending entries to protect them from being overwritten
+    const pending = await db.entries.where('syncStatus').equals('pending').toArray();
+    const pendingIds = new Set(pending.map(e => e.id));
+
+    const toUpsert = cloudEntries.filter(e => !pendingIds.has(e.id)).map(e => {
+      // Ensure cloud entries are marked as synced locally
+      return { ...e, syncStatus: 'synced' as const };
+    });
+
+    if (toUpsert.length > 0) {
+      await db.entries.bulkPut(toUpsert);
+    }
+  },
+
   async getAllEntries(): Promise<ProductionEntry[]> {
     const all = await db.entries.toArray();
     return all.filter(e => !e.isDeleted);

@@ -9,6 +9,7 @@ import EntryDetailModal from './EntryDetailModal';
 import { Filter, Trash2, Database, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import ConfirmDialog from '../common/ConfirmDialog';
 import { useSync } from '../../contexts/SyncContext';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 interface Props {
   onEdit: (id: string) => void;
@@ -17,8 +18,6 @@ interface Props {
 export default function EntryList({ onEdit }: Props) {
   const { currentUser } = useAuth();
   const { pendingCount } = useSync();
-  const [entries, setEntries] = useState<ProductionEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   
   // Filters
   const [statusFilter, setStatusFilter] = useState<'ALL' | EntryStatus>('ALL');
@@ -33,8 +32,8 @@ export default function EntryList({ onEdit }: Props) {
     idToDelete: string | null;
   }>({ isOpen: false, idToDelete: null });
 
-  const loadEntries = async () => {
-    setLoading(true);
+  // Reactive live query that instantly updates when Firebase pushes new data to Dexie
+  const entries = useLiveQuery(async () => {
     let all = await StorageService.getAllEntries();
     
     // RBAC logic: Operator only sees their own entries
@@ -47,14 +46,10 @@ export default function EntryList({ onEdit }: Props) {
     
     // Sort descending by last modified
     all.sort((a, b) => b.lastModified - a.lastModified);
-    
-    setEntries(all);
-    setLoading(false);
-  };
+    return all;
+  }, [currentUser]) || [];
 
-  useEffect(() => {
-    loadEntries();
-  }, [currentUser, pendingCount]);
+  const loading = entries === undefined;
 
   // Tab counts
   const counts = useMemo(() => {
@@ -79,7 +74,6 @@ export default function EntryList({ onEdit }: Props) {
 
   const handleModalClose = (wasUpdated: boolean) => {
     setSelectedEntry(null);
-    if (wasUpdated) loadEntries();
   };
 
   const initiateDelete = (id: string, e: React.MouseEvent) => {
@@ -96,7 +90,6 @@ export default function EntryList({ onEdit }: Props) {
     
     try {
       await StorageService.deleteEntry(id);
-      await loadEntries();
     } catch (err: any) {
       console.error('Delete error:', err);
       alert('Failed to delete draft: ' + err.message);

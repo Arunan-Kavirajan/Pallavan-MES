@@ -1,5 +1,5 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, setDoc, deleteDoc, serverTimestamp, collection, onSnapshot } from 'firebase/firestore';
 import { ProductionEntry } from '../types/domain';
 
 // Firebase configuration from environment variables
@@ -69,6 +69,25 @@ class FirebaseService {
       console.error('[Firebase] Failed to sync entry to cloud:', err);
       throw err; // Let the local sync manager handle the retry logic
     }
+  }
+
+  /**
+   * Listens for real-time changes on Firebase and syncs them DOWN to the local database.
+   * Returns an unsubscribe function.
+   */
+  subscribeToChanges(onUpdate: (entries: ProductionEntry[]) => void): () => void {
+    if (!this.isEnabled || !this.db) return () => {};
+
+    const q = collection(this.db, 'production_entries');
+    return onSnapshot(q, (snapshot) => {
+      const entries: ProductionEntry[] = [];
+      snapshot.forEach(doc => {
+        const data = doc.data() as ProductionEntry;
+        // Don't pull deleted ones or weird states, but we sync everything
+        entries.push(data);
+      });
+      onUpdate(entries);
+    });
   }
 }
 
