@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { KeyRound, User, ChevronRight, Factory } from 'lucide-react';
+import { KeyRound, User, ChevronRight, Factory, Monitor } from 'lucide-react';
 
 export default function Login() {
   const { login } = useAuth();
@@ -103,6 +103,18 @@ export default function Login() {
             <div><span className="font-mono bg-gray-200 px-1 py-0.5 rounded">OP-01</span> or <span className="font-mono bg-gray-200 px-1 py-0.5 rounded">OP-02</span> (Operators)</div>
             <div className="mt-1"><span className="font-mono bg-gray-200 px-1 py-0.5 rounded">SUP-01</span> (Supervisor) | <span className="font-mono bg-gray-200 px-1 py-0.5 rounded">MGR-01</span> (Manager)</div>
             <div className="mt-2 text-blue-600 font-semibold">Universal PIN: apex123</div>
+          </div>
+          
+          <div className="mt-4 pt-4 border-t border-gray-200 text-center">
+            <a 
+              href="https://github.com/Arunan-Kavirajan/Pallavan-MES/releases" 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center text-sm font-medium text-blue-700 hover:text-blue-900 hover:underline"
+            >
+              <Monitor size={14} className="mr-1" />
+              Download Windows Desktop App (.exe)
+            </a>
           </div>
         </div>
       </div>
