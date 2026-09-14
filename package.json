@@ -12,7 +12,8 @@
     "test": "vitest run",
     "electron:start": "electron .",
     "electron:dev": "concurrently -k \"npm run dev\" \"wait-on tcp:5173 && npm run electron:start\"",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "build:installers": "npm run electron:build && node scripts/deploy-installers.js"
   },
   "build": {
     "appId": "com.apexflow.pallavanmes",
@@ -22,6 +23,19 @@
     },
     "win": {
       "target": ["nsis"]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Pallavan MES"
+    },
+    "mac": {
+      "target": ["dmg"]
+    },
+    "linux": {
+      "target": ["AppImage"]
     },
     "files": [
       "dist/**/*",

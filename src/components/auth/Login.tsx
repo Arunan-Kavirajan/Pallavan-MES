@@ -105,16 +105,34 @@ export default function Login() {
             <div className="mt-2 text-blue-600 font-semibold">Universal PIN: apex123</div>
           </div>
           
-          <div className="mt-4 pt-4 border-t border-gray-200 text-center">
-            <a 
-              href="https://github.com/Arunan-Kavirajan/Pallavan-MES/releases" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center text-sm font-medium text-blue-700 hover:text-blue-900 hover:underline"
-            >
-              <Monitor size={14} className="mr-1" />
-              Download Windows Desktop App (.exe)
-            </a>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <span className="font-semibold block mb-2 text-gray-700 text-xs text-center">Download Desktop Application</span>
+            <div className="flex flex-col gap-2">
+              <a 
+                href="/downloads/Pallavan-MES-Windows.exe" 
+                download
+                className="w-full flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Monitor size={14} className="mr-2 text-blue-600" />
+                Windows (.exe)
+              </a>
+              <a 
+                href="/downloads/Pallavan-MES-Mac.dmg" 
+                download
+                className="w-full flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Monitor size={14} className="mr-2 text-gray-800" />
+                macOS (.dmg)
+              </a>
+              <a 
+                href="/downloads/Pallavan-MES-Linux.AppImage" 
+                download
+                className="w-full flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Monitor size={14} className="mr-2 text-orange-600" />
+                Linux (.AppImage)
+              </a>
+            </div>
           </div>
         </div>
       </div>
