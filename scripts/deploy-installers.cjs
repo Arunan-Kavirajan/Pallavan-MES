@@ -11,7 +11,7 @@ if (!fs.existsSync(downloadsDir)) {
 
 // Map electron-builder outputs to clean download names
 const filesToCopy = [
-  { prefix: 'Pallavan MES Setup', dest: 'Pallavan-MES-Windows-Setup.exe' },
+  { prefix: 'Pallavan MES Setup', ext: '.exe', dest: 'Pallavan-MES-Windows-Setup.exe' },
   { prefix: 'Pallavan MES-', ext: '.dmg', dest: 'Pallavan-MES-Mac-Setup.dmg' },
   { prefix: 'Pallavan MES-', ext: '.AppImage', dest: 'Pallavan-MES-Linux-Setup.AppImage' }
 ];
@@ -25,7 +25,7 @@ if (fs.existsSync(releaseDir)) {
         const srcPath = path.join(releaseDir, file);
         const destPath = path.join(downloadsDir, mapping.dest);
         
-        console.log(Copying installer:  -> dist/downloads/);
+        console.log(`Copying installer: ${file} -> dist/downloads/${mapping.dest}`);
         fs.copyFileSync(srcPath, destPath);
       }
     });
