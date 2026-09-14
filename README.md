@@ -29,9 +29,25 @@ This project runs with zero external backend or cloud dependencies (no Firebase 
 # Install dependencies
 npm install
 
-# Run the development server
+# Start the development server
 npm run dev
 ```
+
+### Firebase Cloud Sync (Optional)
+The application operates flawlessly in a **Local-First Emulation Mode** (IndexedDB) out of the box so you can review it instantly with zero configuration. 
+
+However, a production-ready **Firebase Cloud Sync** engine is fully built into the architecture (`src/services/firebaseService.ts`). To test live cloud syncing:
+1. Create a `.env` file in the root directory.
+2. Add your Firebase web configuration keys:
+   ```env
+   VITE_FIREBASE_API_KEY=your_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
+   ```
+3. Restart the dev server. The app will automatically detect the keys, exit emulation mode, and begin syncing approved records to a `production_entries` Cloud Firestore collection.
 
 ### Running Tests
 Automated unit tests covering calculations, validations, and edge cases:

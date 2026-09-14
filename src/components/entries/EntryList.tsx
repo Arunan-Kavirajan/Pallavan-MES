@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { StorageService } from '../../services/storageService';
-import { ProductionEntry } from '../../types/domain';
+import { ProductionEntry, EntryStatus } from '../../types/domain';
 import { StatusBadge, SyncBadge } from '../common/StatusBadge';
 import { format } from 'date-fns';
-import { SHIFT_HOURS } from '../../constants/seededData';
+import { SHIFT_HOURS, MACHINES, SHIFTS } from '../../constants/seededData';
 import EntryDetailModal from './EntryDetailModal';
+import { Filter, Trash2, Database, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface Props {
   onEdit: (id: string) => void;
@@ -16,18 +17,26 @@ export default function EntryList({ onEdit }: Props) {
   const [entries, setEntries] = useState<ProductionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<'ALL' | EntryStatus>('ALL');
+  const [shiftFilter, setShiftFilter] = useState<string>('ALL');
+  const [machineFilter, setMachineFilter] = useState<string>('ALL');
+  
   const [selectedEntry, setSelectedEntry] = useState<ProductionEntry | null>(null);
 
   const loadEntries = async () => {
     setLoading(true);
+    // Seed demo data if database is completely empty on first launch
+    // await StorageService.seedDemoDataIfEmpty();
+
     let all = await StorageService.getAllEntries();
     
-    // RBAC logic
+    // RBAC logic: Operator only sees their own entries
     if (currentUser.role === 'Operator') {
       all = all.filter(e => e.operatorId === currentUser.id);
     }
     
-    // Sort descending by date/shift/slot
+    // Sort descending by last modified
     all.sort((a, b) => b.lastModified - a.lastModified);
     
     setEntries(all);
@@ -38,88 +47,236 @@ export default function EntryList({ onEdit }: Props) {
     loadEntries();
   }, [currentUser]);
 
-  // When returning from details, refresh
+  // Tab counts
+  const counts = useMemo(() => {
+    return {
+      ALL: entries.length,
+      Draft: entries.filter(e => e.status === 'Draft').length,
+      Submitted: entries.filter(e => e.status === 'Submitted').length,
+      Approved: entries.filter(e => e.status === 'Approved').length,
+      Returned: entries.filter(e => e.status === 'Returned').length,
+    };
+  }, [entries]);
+
+  // Filtered entries
+  const filtered = useMemo(() => {
+    return entries.filter(e => {
+      if (statusFilter !== 'ALL' && e.status !== statusFilter) return false;
+      if (shiftFilter !== 'ALL' && e.shift !== shiftFilter) return false;
+      if (machineFilter !== 'ALL' && e.machineId !== machineFilter) return false;
+      return true;
+    });
+  }, [entries, statusFilter, shiftFilter, machineFilter]);
+
   const handleModalClose = (wasUpdated: boolean) => {
     setSelectedEntry(null);
     if (wasUpdated) loadEntries();
   };
 
+  const handleDeleteDraft = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this draft entry?')) {
+      await StorageService.deleteEntry(id);
+      loadEntries();
+    }
+  };
+
+  const handleResetDemoData = async () => {
+    if (window.confirm('Reset local database to initial sample shift entries?')) {
+      await StorageService.loadDemoData();
+      loadEntries();
+    }
+  };
+
   const getHourLabel = (shift: 'A'|'B'|'C', slotId: string) => {
-    const slot = SHIFT_HOURS[shift].find(s => s.id === slotId);
+    const slot = SHIFT_HOURS[shift]?.find(s => s.id === slotId);
     return slot ? slot.label : slotId;
   };
 
   if (loading) return <div className="p-8 text-center text-gray-500">Loading entries...</div>;
 
-  if (entries.length === 0) {
-    return (
-      <div className="p-12 text-center text-gray-500">
-        No production entries found.
-        {currentUser.role === 'Operator' && <p className="mt-2">Click "New Entry" to record production.</p>}
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Machine</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Part</th>
-              {currentUser.role !== 'Operator' && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operator</th>
-              )}
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Prod / Rej</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {entries.map((entry) => (
-              <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{format(new Date(entry.entryDate), 'MMM dd, yyyy')}</div>
-                  <div className="text-xs text-gray-500">Shift {entry.shift} • {getHourLabel(entry.shift, entry.hourSlot)}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{entry.machineId}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {entry.partNumber}
-                </td>
-                {currentUser.role !== 'Operator' && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {entry.operatorName}
-                  </td>
-                )}
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                  <div className="font-medium text-gray-900">{entry.producedQuantity}</div>
-                  <div className={`text-xs ${entry.rejectedQuantity > 0 ? 'text-danger' : 'text-gray-400'}`}>
-                    {entry.rejectedQuantity} rej ({entry.rejectionPercentage}%)
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <StatusBadge status={entry.status} />
-                  <SyncBadge syncStatus={entry.syncStatus} />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {/* Action logic based on role and status */}
-                  {currentUser.role === 'Operator' && (entry.status === 'Draft' || entry.status === 'Returned') ? (
-                    <button onClick={() => onEdit(entry.id)} className="text-primary hover:text-primary-dark">Edit</button>
-                  ) : (
-                    <button onClick={() => setSelectedEntry(entry)} className="text-gray-600 hover:text-gray-900">
-                      {currentUser.role === 'Supervisor' && entry.status === 'Submitted' ? 'Review' : 'View'}
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Top Filter & Action Bar */}
+      <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        
+        {/* Status Filter Tabs */}
+        <div className="flex flex-wrap gap-1 bg-white p-1 rounded-lg border border-gray-200 shadow-xs">
+          {(['ALL', 'Draft', 'Submitted', 'Approved', 'Returned'] as const).map(tab => {
+            const count = counts[tab as keyof typeof counts];
+            const isActive = statusFilter === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setStatusFilter(tab)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive 
+                    ? 'bg-primary text-white shadow-xs' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <span>{tab === 'ALL' ? 'All Entries' : tab}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  isActive ? 'bg-blue-800 text-white' : 'bg-gray-200 text-gray-700'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Shift & Machine Dropdowns + Demo Data Button */}
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={shiftFilter}
+            onChange={(e) => setShiftFilter(e.target.value)}
+            className="text-xs bg-white border border-gray-300 rounded-md p-1.5 focus:ring-primary focus:border-primary text-gray-700"
+          >
+            <option value="ALL">All Shifts</option>
+            {SHIFTS.map(s => <option key={s} value={s}>Shift {s}</option>)}
+          </select>
+
+          <select
+            value={machineFilter}
+            onChange={(e) => setMachineFilter(e.target.value)}
+            className="text-xs bg-white border border-gray-300 rounded-md p-1.5 focus:ring-primary focus:border-primary text-gray-700"
+          >
+            <option value="ALL">All Machines</option>
+            {MACHINES.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          </select>
+
+          <button
+            onClick={handleResetDemoData}
+            title="Reload realistic sample data for testing"
+            className="text-xs flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            <RefreshCw size={13} />
+            <span className="hidden md:inline">Reset Demo Data</span>
+          </button>
+        </div>
+
       </div>
+
+      {/* Entries Table */}
+      {filtered.length === 0 ? (
+        <div className="p-12 text-center text-gray-500">
+          <AlertCircle size={32} className="mx-auto mb-2 text-gray-400" />
+          <p className="font-medium text-gray-700">No matching entries found</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {statusFilter !== 'ALL' || shiftFilter !== 'ALL' || machineFilter !== 'ALL'
+              ? 'Try resetting your filters to see more entries.'
+              : currentUser.role === 'Operator'
+              ? 'Click "New Entry" above to start logging your shift production.'
+              : 'Switch persona or reload demo data.'}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              <tr>
+                <th className="px-6 py-3 text-left">Date & Shift Slot</th>
+                <th className="px-6 py-3 text-left">Machine</th>
+                <th className="px-6 py-3 text-left">Part Number</th>
+                {currentUser.role !== 'Operator' && (
+                  <th className="px-6 py-3 text-left">Operator</th>
+                )}
+                <th className="px-6 py-3 text-right">Prod / Rej</th>
+                <th className="px-6 py-3 text-right">Achievement</th>
+                <th className="px-6 py-3 text-left">Status</th>
+                <th className="px-6 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200 text-sm">
+              {filtered.map((entry) => (
+                <tr 
+                  key={entry.id} 
+                  onClick={() => setSelectedEntry(entry)}
+                  className="hover:bg-blue-50/40 cursor-pointer transition-colors"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="font-semibold text-gray-900">{format(new Date(entry.entryDate), 'MMM dd, yyyy')}</div>
+                    <div className="text-xs text-gray-500">Shift {entry.shift} • {getHourLabel(entry.shift, entry.hourSlot)}</div>
+                  </td>
+                  
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="font-mono text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded">
+                      {entry.machineId}
+                    </span>
+                  </td>
+                  
+                  <td className="px-6 py-4 whitespace-nowrap font-mono text-xs text-gray-600">
+                    {entry.partNumber}
+                  </td>
+
+                  {currentUser.role !== 'Operator' && (
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {entry.operatorName}
+                    </td>
+                  )}
+
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="font-bold text-gray-900">{entry.producedQuantity} pcs</div>
+                    <div className={`text-xs ${entry.rejectedQuantity > 0 ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
+                      {entry.rejectedQuantity} rej ({entry.rejectionPercentage}%)
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap text-right font-medium">
+                    <div className={entry.achievementPercentage >= 100 ? 'text-green-600 font-bold' : 'text-gray-700'}>
+                      {entry.achievementPercentage}%
+                    </div>
+                    <div className="text-[10px] text-gray-400">Target: {entry.plannedQuantity}</div>
+                  </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <StatusBadge status={entry.status} />
+                      <SyncBadge syncStatus={entry.syncStatus} />
+                    </div>
+                  </td>
+
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end space-x-2">
+                      {currentUser.role === 'Operator' && (entry.status === 'Draft' || entry.status === 'Returned') ? (
+                        <>
+                          <button 
+                            onClick={() => onEdit(entry.id)} 
+                            className="text-primary hover:text-primary-dark font-medium text-xs bg-blue-50 px-2.5 py-1 rounded border border-blue-200"
+                          >
+                            Edit
+                          </button>
+                          {entry.status === 'Draft' && (
+                            <button 
+                              onClick={(e) => handleDeleteDraft(entry.id, e)} 
+                              className="text-red-600 hover:text-red-800 p-1"
+                              title="Delete Draft"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <button 
+                          onClick={() => setSelectedEntry(entry)} 
+                          className={`text-xs px-2.5 py-1 rounded font-medium ${
+                            currentUser.role === 'Supervisor' && entry.status === 'Submitted'
+                              ? 'bg-primary text-white hover:bg-primary-dark'
+                              : 'text-gray-600 hover:bg-gray-100 border border-gray-200'
+                          }`}
+                        >
+                          {currentUser.role === 'Supervisor' && entry.status === 'Submitted' ? 'Review & Sign' : 'View'}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {selectedEntry && (
         <EntryDetailModal 

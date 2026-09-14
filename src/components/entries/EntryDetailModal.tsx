@@ -26,14 +26,14 @@ export default function EntryDetailModal({ entry, onClose, onUpdated }: Props) {
   const handleApprove = async (signatureDataUrl: string) => {
     const updated = { ...entry };
     updated.status = 'Approved';
-    updated.auditTrail.push({
+    updated.auditTrail = [...entry.auditTrail, {
       timestamp: new Date().toISOString(),
       userId: currentUser.id,
       userName: currentUser.name,
       userRole: currentUser.role,
       action: 'APPROVED',
       signatureDataUrl
-    });
+    }];
     updated.syncStatus = 'pending'; // Requires sync
     updated.lastModified = Date.now();
     
@@ -45,14 +45,14 @@ export default function EntryDetailModal({ entry, onClose, onUpdated }: Props) {
   const handleReturn = async (remark: string) => {
     const updated = { ...entry };
     updated.status = 'Returned';
-    updated.auditTrail.push({
+    updated.auditTrail = [...entry.auditTrail, {
       timestamp: new Date().toISOString(),
       userId: currentUser.id,
       userName: currentUser.name,
       userRole: currentUser.role,
       action: 'RETURNED',
       notes: remark
-    });
+    }];
     updated.syncStatus = 'pending';
     updated.lastModified = Date.now();
     
@@ -125,23 +125,48 @@ export default function EntryDetailModal({ entry, onClose, onUpdated }: Props) {
                 </div>
              </div>
 
-             <h3 className="font-semibold text-gray-900 mb-3 border-b border-gray-200 pb-1">Audit Trail</h3>
-             <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-               {entry.auditTrail.map((log, idx) => (
-                 <div key={idx} className="text-xs bg-gray-50 p-2 rounded border border-gray-100">
-                   <div className="flex justify-between mb-1">
-                     <span className="font-semibold text-gray-700">{log.action} by {log.userName}</span>
-                     <span className="text-gray-400">{format(new Date(log.timestamp), 'HH:mm:ss')}</span>
-                   </div>
-                   {log.notes && <div className="text-gray-600 italic">Note: {log.notes}</div>}
-                   {log.signatureDataUrl && (
-                     <div className="mt-2">
-                       <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Digital Signature</span>
-                       <img src={log.signatureDataUrl} alt="Signature" className="h-12 bg-white border border-gray-200 rounded p-1" />
+             <h3 className="font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">Audit Trail Timeline</h3>
+             <div className="relative border-l-2 border-gray-200 ml-3 space-y-6 max-h-64 overflow-y-auto pr-2 pb-2">
+               {entry.auditTrail.map((log, idx) => {
+                 let bgColor = 'bg-gray-100 border-gray-300 text-gray-500';
+                 if (log.action === 'CREATED') bgColor = 'bg-blue-100 border-blue-300 text-blue-600';
+                 if (log.action === 'SUBMITTED') bgColor = 'bg-purple-100 border-purple-300 text-purple-600';
+                 if (log.action === 'APPROVED') bgColor = 'bg-green-100 border-green-300 text-green-600';
+                 if (log.action === 'RETURNED') bgColor = 'bg-red-100 border-red-300 text-red-600';
+
+                 return (
+                   <div key={idx} className="relative pl-6">
+                     <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 bg-white ${bgColor}`} />
+                     <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 shadow-xs">
+                       <div className="flex justify-between items-start mb-1.5">
+                         <div>
+                           <span className={`text-xs font-bold uppercase tracking-wider ${bgColor.split(' ')[2]}`}>
+                             {log.action}
+                           </span>
+                           <span className="text-xs text-gray-600 ml-2 font-medium">by {log.userName}</span>
+                           <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded ml-2">
+                             {log.userRole}
+                           </span>
+                         </div>
+                         <span className="text-[10px] text-gray-400 font-mono">
+                           {format(new Date(log.timestamp), 'MMM dd, HH:mm:ss')}
+                         </span>
+                       </div>
+                       {log.notes && (
+                         <div className="text-xs text-gray-700 bg-white border border-gray-200 p-2 rounded-md italic mt-2 shadow-xs">
+                           "{log.notes}"
+                         </div>
+                       )}
+                       {log.signatureDataUrl && (
+                         <div className="mt-3 bg-white p-2 border border-gray-200 rounded-md inline-block shadow-xs">
+                           <span className="text-[9px] text-gray-400 uppercase tracking-wider block mb-1 font-semibold">Verified Digital Signature</span>
+                           <img src={log.signatureDataUrl} alt="Signature" className="h-10 mix-blend-multiply" />
+                         </div>
+                       )}
                      </div>
-                   )}
-                 </div>
-               ))}
+                   </div>
+                 );
+               })}
              </div>
           </div>
 

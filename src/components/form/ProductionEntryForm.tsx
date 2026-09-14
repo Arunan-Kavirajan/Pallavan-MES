@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSync } from '../../contexts/SyncContext';
 import { StorageService } from '../../services/storageService';
 import { validateEntryForm, FormValues } from '../../utils/validation';
-import { calculateAcceptedQuantity, calculateRejectionPercentage, calculateAchievementPercentage, calculateRunningTime } from '../../utils/calculations';
+import { calculateAcceptedQuantity, calculateRejectionPercentage, calculateAchievementPercentage, calculateRunningTime, calculateOEE } from '../../utils/calculations';
 import { MACHINES, PARTS, SHIFTS, SHIFT_HOURS, REJECTION_REASONS } from '../../constants/seededData';
 import { ProductionEntry, Shift, AuditLog } from '../../types/domain';
 import LiveMetricsCard from './LiveMetricsCard';
@@ -56,6 +56,7 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
   const rejectionPct = calculateRejectionPercentage(p, r);
   const achievementPct = calculateAchievementPercentage(pl, accepted);
   const runningTime = calculateRunningTime(dt);
+  const oeeMetrics = calculateOEE(pl, p, r, dt);
 
   // Auto-clear dependent fields when parent changes to 0
   useEffect(() => {
@@ -70,7 +71,9 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
     }
   }, [dt, values.downtimeReason]);
 
-  // Load existing data if editing
+  const [lastEntry, setLastEntry] = useState<ProductionEntry | null>(null);
+
+  // Load existing data if editing, or fetch last entry for quick copy if new
   useEffect(() => {
     async function load() {
       if (entryId) {
@@ -92,11 +95,41 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
             remarks: entry.remarks || ''
           });
         }
+      } else {
+        // Fetch operator's last entry to offer Quick-Copy
+        const all = await StorageService.getAllEntries();
+        const mine = all.filter(e => e.operatorId === currentUser.id);
+        if (mine.length > 0) {
+          mine.sort((a, b) => b.lastModified - a.lastModified);
+          setLastEntry(mine[0]);
+        }
       }
       setLoading(false);
     }
     load();
-  }, [entryId]);
+  }, [entryId, currentUser.id]);
+
+  const handleQuickCopy = () => {
+    if (!lastEntry) return;
+    
+    setShift(lastEntry.shift);
+    setMachineId(lastEntry.machineId);
+    setPartNumber(lastEntry.partNumber);
+    
+    // Auto advance to next hour slot if possible
+    const slots = SHIFT_HOURS[lastEntry.shift];
+    const currentIndex = slots.findIndex(s => s.id === lastEntry.hourSlot);
+    if (currentIndex >= 0 && currentIndex < slots.length - 1) {
+      setHourSlot(slots[currentIndex + 1].id);
+    } else {
+      setHourSlot(lastEntry.hourSlot);
+    }
+
+    setValues(v => ({
+      ...v,
+      plannedQuantity: lastEntry.plannedQuantity.toString()
+    }));
+  };
 
   // Dynamic shift hour list based on selected shift
   const currentShiftHours = useMemo(() => SHIFT_HOURS[shift], [shift]);
@@ -260,6 +293,21 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
         {/* Left Column: Form Inputs */}
         <div className="lg:col-span-2 space-y-6">
           
+          {!entryId && lastEntry && (
+            <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg flex justify-between items-center shadow-xs">
+              <div className="text-sm text-blue-800">
+                <span className="font-semibold">Quick Start:</span> Running the same part on {lastEntry.machineId}?
+              </div>
+              <button 
+                type="button" 
+                onClick={handleQuickCopy}
+                className="text-xs bg-white text-blue-700 font-semibold px-3 py-1.5 rounded border border-blue-300 hover:bg-blue-100 transition-colors"
+              >
+                Auto-fill Next Hour
+              </button>
+            </div>
+          )}
+
           <fieldset disabled={isReadOnly} className="space-y-6">
             {/* Header / Identity Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6 border-b border-gray-100">
@@ -380,6 +428,7 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
               rejectionPct={rejectionPct} 
               achievementPct={achievementPct} 
               runningTime={runningTime} 
+              oee={oeeMetrics}
             />
           </div>
         </div>

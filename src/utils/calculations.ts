@@ -31,6 +31,28 @@ export function calculateAchievementPercentage(planned: number, accepted: number
   return Number(percentage.toFixed(1));
 }
 
+export function calculateOEE(planned: number, produced: number, rejected: number, downtimeMinutes: number): { oee: number, availability: number, performance: number, quality: number } {
+  // 1. Availability = (Total Time - Downtime) / Total Time
+  const availability = (60 - downtimeMinutes) / 60;
+  
+  // 2. Performance = Produced / Planned (Capped at 100% or 1.0)
+  const performance = planned > 0 ? Math.min(1.0, produced / planned) : 0;
+  
+  // 3. Quality = Accepted / Produced
+  const accepted = produced - rejected;
+  const quality = produced > 0 ? accepted / produced : 0;
+  
+  // OEE = A * P * Q
+  const oee = availability * performance * quality;
+  
+  return {
+    oee: Number((oee * 100).toFixed(1)),
+    availability: Number((availability * 100).toFixed(1)),
+    performance: Number((performance * 100).toFixed(1)),
+    quality: Number((quality * 100).toFixed(1))
+  };
+}
+
 /**
  * Calculate Running Time
  * Running time = 60 - Downtime minutes

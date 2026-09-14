@@ -21,7 +21,7 @@ export default function SignaturePadModal({ onClose, onSign }: Props) {
       setError(true);
       return;
     }
-    const dataUrl = sigCanvas.current?.getTrimmedCanvas().toDataURL('image/png');
+    const dataUrl = sigCanvas.current?.getCanvas().toDataURL('image/png');
     if (dataUrl) {
       onSign(dataUrl);
     }

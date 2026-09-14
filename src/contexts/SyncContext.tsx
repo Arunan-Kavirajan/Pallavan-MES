@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db } from '../services/storageService';
+import { firebaseService } from '../services/firebaseService';
 
 interface SyncContextType {
   isOnline: boolean;
@@ -62,21 +63,25 @@ export const SyncProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const syncNow = async () => {
     if (!effectivelyOnline) return;
     
-    // In a real app, this would push to backend API and pull changes.
-    // For this offline-first local app, syncing just means resolving 'pending' to 'synced'
-    // after simulating network latency.
+    // 1. Fetch pending
+    const pending = await db.entries.where('syncStatus').equals('pending').toArray();
     
-    const pendingEntries = await db.entries.where('syncStatus').equals('pending').toArray();
-    if (pendingEntries.length === 0) return;
-
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    await db.transaction('rw', db.entries, async () => {
-      for (const entry of pendingEntries) {
-        await db.entries.update(entry.id, { syncStatus: 'synced' });
+    // 2. Process (simulate network + push to Firebase)
+    if (pending.length > 0) {
+      // Simulate base network latency
+      await new Promise(r => setTimeout(r, 1000));
+      
+      for (const p of pending) {
+        // Push to Firebase (no-op if emulation mode)
+        try {
+          await firebaseService.syncEntryToCloud(p);
+          await db.entries.update(p.id, { syncStatus: 'synced' });
+        } catch (err) {
+          console.error('Failed to sync to cloud', err);
+          // Leaves it pending
+        }
       }
-    });
+    }
   };
 
   // Auto-sync when coming back online

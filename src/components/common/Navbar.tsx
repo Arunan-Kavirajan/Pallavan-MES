@@ -1,12 +1,32 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSync } from '../../contexts/SyncContext';
 import { SEEDED_USERS } from '../../constants/seededData';
-import { Wifi, WifiOff, CloudSync, Factory } from 'lucide-react';
+import { Wifi, WifiOff, CloudSync, Factory, Download } from 'lucide-react';
 
 export default function Navbar() {
-  const { currentUser, switchUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const { isOnline, isSimulatingOffline, toggleOfflineSimulation, pendingCount, syncNow } = useSync();
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstall = (e: any) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setInstallPrompt(null);
+    }
+  };
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -65,33 +85,32 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* Persona Switcher */}
-            <div className="flex items-center">
-              <div className="text-right mr-3 hidden md:block">
-                <div className="text-sm font-semibold text-gray-900">{currentUser.name}</div>
-                <div className="text-xs text-gray-500">{currentUser.role}</div>
+            {/* User Profile & Logout */}
+            <div className="flex items-center space-x-4 border-l border-gray-200 pl-4">
+              <div className="text-right hidden sm:block">
+                <div className="text-sm font-semibold text-gray-900 leading-tight">{currentUser.name}</div>
+                <div className="text-xs text-primary font-medium">{currentUser.role}</div>
               </div>
-              <select
-                className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2"
-                value={currentUser.id}
-                onChange={(e) => switchUser(e.target.value)}
+              <div className="w-9 h-9 rounded-full bg-blue-100 text-primary flex items-center justify-center font-bold text-sm border border-blue-200">
+                {currentUser.name.charAt(0)}
+              </div>
+              {installPrompt && (
+                <button
+                  onClick={handleInstallClick}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg shadow-sm transition-all"
+                  title="Install App to Desktop or Tablet"
+                >
+                  <Download size={14} />
+                  Install App
+                </button>
+              )}
+
+              <button
+                onClick={logout}
+                className="text-xs text-gray-500 hover:text-gray-900 border border-gray-200 hover:bg-gray-50 px-2 py-1.5 rounded transition-colors"
               >
-                <optgroup label="Operators">
-                  {SEEDED_USERS.filter(u => u.role === 'Operator').map(u => (
-                    <option key={u.id} value={u.id}>{u.name} (Op)</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Supervisors">
-                  {SEEDED_USERS.filter(u => u.role === 'Supervisor').map(u => (
-                    <option key={u.id} value={u.id}>{u.name} (Sup)</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Managers">
-                  {SEEDED_USERS.filter(u => u.role === 'Manager').map(u => (
-                    <option key={u.id} value={u.id}>{u.name} (Mgr)</option>
-                  ))}
-                </optgroup>
-              </select>
+                Sign Out
+              </button>
             </div>
 
           </div>

@@ -23,11 +23,11 @@ export function validateEntryForm(values: FormValues, isSubmit: boolean = false)
   const rejected = Number(values.rejectedQuantity);
   const downtime = Number(values.downtimeMinutes);
 
-  // 1. Whole numbers and non-negative
-  if (planned < 0 || !Number.isInteger(planned)) errors.plannedQuantity = 'Must be a non-negative whole number';
-  if (produced < 0 || !Number.isInteger(produced)) errors.producedQuantity = 'Must be a non-negative whole number';
-  if (rejected < 0 || !Number.isInteger(rejected)) errors.rejectedQuantity = 'Must be a non-negative whole number';
-  if (downtime < 0 || !Number.isInteger(downtime)) errors.downtimeMinutes = 'Must be a non-negative whole number';
+  // 1. Required fields and numbers
+  if (values.plannedQuantity === '' || planned < 0 || !Number.isInteger(planned)) errors.plannedQuantity = 'Required. Must be a non-negative whole number';
+  if (values.producedQuantity === '' || produced < 0 || !Number.isInteger(produced)) errors.producedQuantity = 'Required. Must be a non-negative whole number';
+  if (values.rejectedQuantity === '' || rejected < 0 || !Number.isInteger(rejected)) errors.rejectedQuantity = 'Required. Must be a non-negative whole number';
+  if (values.downtimeMinutes === '' || downtime < 0 || !Number.isInteger(downtime)) errors.downtimeMinutes = 'Required. Must be a non-negative whole number';
 
   // 2. Downtime limits
   if (downtime > 60) errors.downtimeMinutes = 'Downtime cannot exceed 60 minutes';
