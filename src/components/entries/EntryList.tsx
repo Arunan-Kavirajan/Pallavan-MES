@@ -80,10 +80,9 @@ export default function EntryList({ onEdit }: Props) {
     e.preventDefault();
     e.stopPropagation();
     try {
-      if (window.confirm('Are you sure you want to delete this draft entry?')) {
-        await StorageService.deleteEntry(id);
-        await loadEntries();
-      }
+      console.log('Deleting draft:', id);
+      await StorageService.deleteEntry(id);
+      await loadEntries();
     } catch (err: any) {
       console.error('Delete error:', err);
       alert('Failed to delete draft: ' + err.message);
@@ -232,12 +231,13 @@ export default function EntryList({ onEdit }: Props) {
                     </div>
                   </td>
 
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
                       {currentUser.role === 'Operator' && (entry.status === 'Draft' || entry.status === 'Returned') ? (
                         <>
                           <button 
-                            onClick={() => onEdit(entry.id)} 
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onEdit(entry.id); }} 
                             className="text-primary hover:text-primary-dark font-medium text-xs bg-blue-50 px-2.5 py-1 rounded border border-blue-200"
                           >
                             Edit
@@ -255,7 +255,8 @@ export default function EntryList({ onEdit }: Props) {
                         </>
                       ) : (
                         <button 
-                          onClick={() => setSelectedEntry(entry)} 
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setSelectedEntry(entry); }} 
                           className={`text-xs px-2.5 py-1 rounded font-medium ${
                             currentUser.role === 'Supervisor' && entry.status === 'Submitted'
                               ? 'bg-primary text-white hover:bg-primary-dark'
