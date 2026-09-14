@@ -43,7 +43,9 @@ export const StorageService = {
       hourSlot
     }).toArray();
     
-    const existing = entries.find(e => !e.isDeleted && e.id !== currentId);
+    // Ignore deleted entries, ignore the current entry being edited, and IGNORE DRAFTS from other users
+    // so a pending draft doesn't lock up a slot for the whole factory.
+    const existing = entries.find(e => !e.isDeleted && e.id !== currentId && e.status !== 'Draft');
     return existing;
   },
 

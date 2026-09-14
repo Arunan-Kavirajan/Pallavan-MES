@@ -19,7 +19,9 @@ export default function ExportPanel() {
     async function checkEntries() {
       setLoading(true);
       const entries = await StorageService.getEntriesByDateAndShift(date, shift);
-      setMatchingEntries(entries);
+      // NEVER export or show drafts in the export panel
+      const nonDrafts = entries.filter(e => e.status !== 'Draft');
+      setMatchingEntries(nonDrafts);
       setLoading(false);
     }
     checkEntries();

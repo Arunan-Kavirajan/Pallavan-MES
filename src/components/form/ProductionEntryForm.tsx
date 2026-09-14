@@ -19,8 +19,7 @@ interface Props {
 
 export default function ProductionEntryForm({ entryId, onClose }: Props) {
   const { currentUser } = useAuth();
-  const { isOnline, isSimulatingOffline } = useSync();
-  const effectivelyOnline = isOnline && !isSimulatingOffline;
+  const { isOnline } = useSync();
 
   const [loading, setLoading] = useState(true);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
