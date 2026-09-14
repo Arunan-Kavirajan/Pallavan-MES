@@ -109,7 +109,7 @@ export default function Login() {
             <span className="font-semibold block mb-2 text-gray-700 text-xs text-center">Download Desktop Application</span>
             <div className="flex flex-col gap-2">
               <a 
-                href="/downloads/Pallavan-MES-Windows.exe" 
+                href="/downloads/Pallavan-MES-Windows-Setup.exe" 
                 download
                 className="w-full flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
@@ -117,7 +117,7 @@ export default function Login() {
                 Windows (.exe)
               </a>
               <a 
-                href="/downloads/Pallavan-MES-Mac.dmg" 
+                href="/downloads/Pallavan-MES-Mac-Setup.dmg" 
                 download
                 className="w-full flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
@@ -125,7 +125,7 @@ export default function Login() {
                 macOS (.dmg)
               </a>
               <a 
-                href="/downloads/Pallavan-MES-Linux.AppImage" 
+                href="/downloads/Pallavan-MES-Linux-Setup.AppImage" 
                 download
                 className="w-full flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
