@@ -47,7 +47,24 @@ export default function EntryList({ onEdit }: Props) {
     // Sort descending by last modified
     all.sort((a, b) => b.lastModified - a.lastModified);
     return all;
-  }, [currentUser]) || [];
+    }, [currentUser]);
+
+  if (entries === undefined) {
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6 animate-pulse">
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="h-10 bg-gray-200 rounded-lg w-full md:w-1/3"></div>
+          <div className="h-10 bg-gray-200 rounded-lg w-full md:w-1/3"></div>
+          <div className="h-10 bg-gray-200 rounded-lg w-full md:w-1/3"></div>
+        </div>
+        <div className="space-y-4">
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="h-16 bg-gray-100 rounded-lg w-full"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const loading = entries === undefined;
 

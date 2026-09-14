@@ -21,7 +21,26 @@ export default function SummaryView() {
 
   const entries = useLiveQuery(async () => {
     return await StorageService.getAllEntries();
-  }) || [];
+  });
+  
+  if (entries === undefined) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4 animate-pulse"></div>
+          <div className="flex gap-4">
+            <div className="h-10 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="bg-white rounded-lg shadow p-5 border-l-4 border-gray-200 h-28 animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
   
   const loading = entries === undefined;
 
