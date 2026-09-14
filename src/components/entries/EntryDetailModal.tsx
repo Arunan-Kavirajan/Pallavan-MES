@@ -1,0 +1,190 @@
+import React, { useState } from 'react';
+import Modal from '../common/Modal';
+import { ProductionEntry } from '../../types/domain';
+import { useAuth } from '../../contexts/AuthContext';
+import { StatusBadge } from '../common/StatusBadge';
+import { format } from 'date-fns';
+import { SHIFT_HOURS } from '../../constants/seededData';
+import ReturnModal from './ReturnModal';
+import SignaturePadModal from '../approval/SignaturePadModal';
+import { StorageService } from '../../services/storageService';
+
+interface Props {
+  entry: ProductionEntry;
+  onClose: () => void;
+  onUpdated: () => void;
+}
+
+export default function EntryDetailModal({ entry, onClose, onUpdated }: Props) {
+  const { currentUser } = useAuth();
+  
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
+
+  const slotLabel = SHIFT_HOURS[entry.shift].find(s => s.id === entry.hourSlot)?.label || entry.hourSlot;
+
+  const handleApprove = async (signatureDataUrl: string) => {
+    const updated = { ...entry };
+    updated.status = 'Approved';
+    updated.auditTrail.push({
+      timestamp: new Date().toISOString(),
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userRole: currentUser.role,
+      action: 'APPROVED',
+      signatureDataUrl
+    });
+    updated.syncStatus = 'pending'; // Requires sync
+    updated.lastModified = Date.now();
+    
+    await StorageService.saveEntry(updated);
+    setShowSignatureModal(false);
+    onUpdated();
+  };
+
+  const handleReturn = async (remark: string) => {
+    const updated = { ...entry };
+    updated.status = 'Returned';
+    updated.auditTrail.push({
+      timestamp: new Date().toISOString(),
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userRole: currentUser.role,
+      action: 'RETURNED',
+      notes: remark
+    });
+    updated.syncStatus = 'pending';
+    updated.lastModified = Date.now();
+    
+    await StorageService.saveEntry(updated);
+    setShowReturnModal(false);
+    onUpdated();
+  };
+
+  return (
+    <>
+      <Modal isOpen={true} onClose={onClose} title="Production Entry Details" maxWidth="max-w-4xl">
+        
+        <div className="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{entry.machineId}</h2>
+            <p className="text-gray-500 text-sm">
+              {format(new Date(entry.entryDate), 'EEEE, MMMM do yyyy')} • Shift {entry.shift} • {slotLabel}
+            </p>
+          </div>
+          <div className="text-right">
+            <StatusBadge status={entry.status} />
+            <div className="text-sm mt-1 text-gray-500">Op: {entry.operatorName}</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-3 border-b border-gray-200 pb-1">Production Data</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between py-1 border-b border-gray-50"><span className="text-gray-500">Part Number</span><span className="font-medium">{entry.partNumber}</span></div>
+              <div className="flex justify-between py-1 border-b border-gray-50"><span className="text-gray-500">Planned Target</span><span className="font-medium">{entry.plannedQuantity}</span></div>
+              <div className="flex justify-between py-1 border-b border-gray-50"><span className="text-gray-500">Total Produced</span><span className="font-medium">{entry.producedQuantity}</span></div>
+              <div className="flex justify-between py-1 border-b border-gray-50"><span className="text-gray-500">Total Rejected</span><span className={`font-medium ${entry.rejectedQuantity > 0 ? 'text-danger' : ''}`}>{entry.rejectedQuantity}</span></div>
+              {entry.rejectedQuantity > 0 && (
+                <div className="flex justify-between py-1 border-b border-gray-50"><span className="text-gray-500">Rejection Reason</span><span className="font-medium text-danger">{entry.rejectionReason}</span></div>
+              )}
+            </div>
+
+            <h3 className="font-semibold text-gray-900 mt-6 mb-3 border-b border-gray-200 pb-1">Machine Status</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between py-1 border-b border-gray-50"><span className="text-gray-500">Downtime</span><span className="font-medium">{entry.downtimeMinutes} min</span></div>
+              {entry.downtimeMinutes > 0 && (
+                <div className="flex justify-between py-1 border-b border-gray-50"><span className="text-gray-500">Downtime Reason</span><span className="font-medium text-warning">{entry.downtimeReason}</span></div>
+              )}
+              {entry.remarks && (
+                <div className="mt-4 p-3 bg-gray-50 rounded text-gray-700 italic border border-gray-200">"{entry.remarks}"</div>
+              )}
+            </div>
+          </div>
+
+          <div>
+             <h3 className="font-semibold text-gray-900 mb-3 border-b border-gray-200 pb-1">Calculated Metrics</h3>
+             <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <div className="text-xs text-gray-500">Accepted</div>
+                  <div className="text-lg font-bold">{entry.acceptedQuantity}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <div className="text-xs text-gray-500">Achievement</div>
+                  <div className="text-lg font-bold">{entry.achievementPercentage}%</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <div className="text-xs text-gray-500">Rejection Rate</div>
+                  <div className={`text-lg font-bold ${entry.rejectionPercentage > 10 ? 'text-danger' : ''}`}>{entry.rejectionPercentage}%</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                  <div className="text-xs text-gray-500">Running Time</div>
+                  <div className="text-lg font-bold">{entry.runningTime} min</div>
+                </div>
+             </div>
+
+             <h3 className="font-semibold text-gray-900 mb-3 border-b border-gray-200 pb-1">Audit Trail</h3>
+             <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+               {entry.auditTrail.map((log, idx) => (
+                 <div key={idx} className="text-xs bg-gray-50 p-2 rounded border border-gray-100">
+                   <div className="flex justify-between mb-1">
+                     <span className="font-semibold text-gray-700">{log.action} by {log.userName}</span>
+                     <span className="text-gray-400">{format(new Date(log.timestamp), 'HH:mm:ss')}</span>
+                   </div>
+                   {log.notes && <div className="text-gray-600 italic">Note: {log.notes}</div>}
+                   {log.signatureDataUrl && (
+                     <div className="mt-2">
+                       <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">Digital Signature</span>
+                       <img src={log.signatureDataUrl} alt="Signature" className="h-12 bg-white border border-gray-200 rounded p-1" />
+                     </div>
+                   )}
+                 </div>
+               ))}
+             </div>
+          </div>
+
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            Close
+          </button>
+          
+          {currentUser.role === 'Supervisor' && entry.status === 'Submitted' && (
+            <>
+              <button 
+                onClick={() => setShowReturnModal(true)} 
+                className="px-4 py-2 border border-red-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100"
+              >
+                Return to Operator
+              </button>
+              <button 
+                onClick={() => setShowSignatureModal(true)} 
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+              >
+                Sign & Approve
+              </button>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      {/* Modals for Supervisor Actions */}
+      <ReturnModal 
+        isOpen={showReturnModal} 
+        onClose={() => setShowReturnModal(false)} 
+        onConfirm={handleReturn} 
+      />
+
+      {showSignatureModal && (
+        <SignaturePadModal 
+          onClose={() => setShowSignatureModal(false)}
+          onSign={handleApprove}
+        />
+      )}
+    </>
+  );
+}
