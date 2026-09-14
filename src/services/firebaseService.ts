@@ -83,10 +83,17 @@ class FirebaseService {
       const entries: ProductionEntry[] = [];
       snapshot.forEach(doc => {
         const data = doc.data() as ProductionEntry;
-        // Don't pull deleted ones or weird states, but we sync everything
+        // Explicitly enforce the ID from the document key
+        data.id = doc.id;
+        // Strip Firebase Timestamp objects because they cause DataError in IndexedDB
+        if ('_cloudSyncedAt' in data) {
+          delete (data as any)._cloudSyncedAt;
+        }
         entries.push(data);
       });
       onUpdate(entries);
+    }, (error) => {
+      console.error('[Firebase] Snapshot sync error:', error);
     });
   }
 }
