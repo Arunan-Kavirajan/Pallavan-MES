@@ -77,10 +77,16 @@ export default function EntryList({ onEdit }: Props) {
   };
 
   const handleDeleteDraft = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this draft entry?')) {
-      await StorageService.deleteEntry(id);
-      loadEntries();
+    try {
+      if (window.confirm('Are you sure you want to delete this draft entry?')) {
+        await StorageService.deleteEntry(id);
+        await loadEntries();
+      }
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      alert('Failed to delete draft: ' + err.message);
     }
   };
 
@@ -238,11 +244,12 @@ export default function EntryList({ onEdit }: Props) {
                           </button>
                           {entry.status === 'Draft' && (
                             <button 
+                              type="button"
                               onClick={(e) => handleDeleteDraft(entry.id, e)} 
-                              className="text-red-600 hover:text-red-800 p-1"
+                              className="text-red-600 hover:text-red-800 p-2 ml-1 cursor-pointer"
                               title="Delete Draft"
                             >
-                              <Trash2 size={14} />
+                              <Trash2 size={16} />
                             </button>
                           )}
                         </>
