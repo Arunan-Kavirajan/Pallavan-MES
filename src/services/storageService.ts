@@ -53,6 +53,12 @@ export const StorageService = {
     await db.entries.delete(id);
   },
 
+  async removeDemoData(): Promise<void> {
+    const demoEntries = await db.entries.filter(e => !!e.isDemo).toArray();
+    const ids = demoEntries.map(e => e.id);
+    await db.entries.bulkDelete(ids);
+  },
+
   async seedDemoDataIfEmpty(): Promise<boolean> {
     const count = await db.entries.count();
     if (count > 0) return false;
@@ -89,7 +95,7 @@ export const StorageService = {
         runningTime: 55,
         status: 'Submitted',
         syncStatus: 'synced',
-        lastModified: Date.now() - 3600000,
+        isDemo: true, lastModified: Date.now() - 3600000,
         auditTrail: [
           {
             timestamp: new Date(Date.now() - 7200000).toISOString(),
@@ -130,7 +136,7 @@ export const StorageService = {
         runningTime: 45,
         status: 'Submitted',
         syncStatus: 'synced',
-        lastModified: Date.now() - 3000000,
+        isDemo: true, lastModified: Date.now() - 3000000,
         auditTrail: [
           {
             timestamp: new Date(Date.now() - 3000000).toISOString(),
@@ -171,7 +177,7 @@ export const StorageService = {
         runningTime: 60,
         status: 'Draft',
         syncStatus: 'synced',
-        lastModified: Date.now() - 1000000,
+        isDemo: true, lastModified: Date.now() - 1000000,
         auditTrail: [
           {
             timestamp: new Date(Date.now() - 1000000).toISOString(),
@@ -205,7 +211,7 @@ export const StorageService = {
         runningTime: 30,
         status: 'Returned',
         syncStatus: 'synced',
-        lastModified: Date.now() - 1800000,
+        isDemo: true, lastModified: Date.now() - 1800000,
         auditTrail: [
           {
             timestamp: new Date(Date.now() - 5000000).toISOString(),
@@ -254,7 +260,7 @@ export const StorageService = {
         runningTime: 50,
         status: 'Approved',
         syncStatus: 'synced',
-        lastModified: Date.now() - 86400000,
+        isDemo: true, lastModified: Date.now() - 86400000,
         auditTrail: [
           {
             timestamp: new Date(Date.now() - 90000000).toISOString(),
@@ -303,7 +309,7 @@ export const StorageService = {
         runningTime: 60,
         status: 'Approved',
         syncStatus: 'synced',
-        lastModified: Date.now() - 70000000,
+        isDemo: true, lastModified: Date.now() - 70000000,
         auditTrail: [
           {
             timestamp: new Date(Date.now() - 75000000).toISOString(),
@@ -352,7 +358,7 @@ export const StorageService = {
         runningTime: 40,
         status: 'Approved',
         syncStatus: 'synced',
-        lastModified: Date.now() - 170000000,
+        isDemo: true, lastModified: Date.now() - 170000000,
         auditTrail: [
           {
             timestamp: new Date(Date.now() - 175000000).toISOString(),

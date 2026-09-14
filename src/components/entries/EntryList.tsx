@@ -6,7 +6,7 @@ import { StatusBadge, SyncBadge } from '../common/StatusBadge';
 import { format } from 'date-fns';
 import { SHIFT_HOURS, MACHINES, SHIFTS } from '../../constants/seededData';
 import EntryDetailModal from './EntryDetailModal';
-import { Filter, Trash2, Database, AlertCircle, RefreshCw } from 'lucide-react';
+import { Filter, Trash2, Database, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
 
 interface Props {
   onEdit: (id: string) => void;
@@ -81,10 +81,19 @@ export default function EntryList({ onEdit }: Props) {
     }
   };
 
-  const handleResetDemoData = async () => {
-    if (window.confirm('Reset local database to initial sample shift entries?')) {
-      await StorageService.loadDemoData();
-      loadEntries();
+  const hasDemoData = entries.some(e => e.isDemo);
+
+  const handleToggleDemoData = async () => {
+    if (hasDemoData) {
+      if (window.confirm('Remove all demo data from the database?')) {
+        await StorageService.removeDemoData();
+        loadEntries();
+      }
+    } else {
+      if (window.confirm('Load realistic sample data into the database for testing?')) {
+        await StorageService.loadDemoData();
+        loadEntries();
+      }
     }
   };
 
@@ -147,12 +156,12 @@ export default function EntryList({ onEdit }: Props) {
           </select>
 
           <button
-            onClick={handleResetDemoData}
-            title="Reload realistic sample data for testing"
+            onClick={handleToggleDemoData}
+            title={hasDemoData ? "Hide sample data" : "Load realistic sample data for testing"}
             className="text-xs flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
           >
-            <RefreshCw size={13} />
-            <span className="hidden md:inline">Reset Demo Data</span>
+            {hasDemoData ? <EyeOff size={13} /> : <Eye size={13} />}
+            <span className="hidden md:inline">{hasDemoData ? 'Hide Demo Data' : 'Show Demo Data'}</span>
           </button>
         </div>
 

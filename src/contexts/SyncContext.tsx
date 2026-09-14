@@ -64,17 +64,19 @@ export const SyncProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!effectivelyOnline) return;
     
     // 1. Fetch pending
-    const pending = await db.entries.where('syncStatus').equals('pending').toArray();
+    const allPending = await db.entries.where('syncStatus').equals('pending').toArray();
     
     // 2. Process (simulate network + push to Firebase)
-    if (pending.length > 0) {
+    if (allPending.length > 0) {
       // Simulate base network latency
       await new Promise(r => setTimeout(r, 1000));
       
-      for (const p of pending) {
-        // Push to Firebase (no-op if emulation mode)
+      for (const p of allPending) {
         try {
-          await firebaseService.syncEntryToCloud(p);
+          if (!p.isDemo) {
+            // Push real entries to Firebase (no-op if emulation mode)
+            await firebaseService.syncEntryToCloud(p);
+          }
           await db.entries.update(p.id, { syncStatus: 'synced' });
         } catch (err) {
           console.error('Failed to sync to cloud', err);
