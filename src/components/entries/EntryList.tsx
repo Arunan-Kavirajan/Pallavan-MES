@@ -98,7 +98,9 @@ export default function EntryList({ onEdit }: Props) {
         
         {/* Status Filter Tabs */}
         <div className="flex flex-wrap gap-1 bg-white p-1 rounded-lg border border-gray-200 shadow-xs">
-          {(['ALL', 'Draft', 'Submitted', 'Approved', 'Returned'] as const).map(tab => {
+          {(['ALL', 'Draft', 'Submitted', 'Approved', 'Returned'] as const)
+            .filter(tab => tab !== 'Draft' || currentUser.role === 'Operator')
+            .map(tab => {
             const count = counts[tab as keyof typeof counts];
             const isActive = statusFilter === tab;
             return (
