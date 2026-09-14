@@ -59,7 +59,7 @@ export interface ProductionEntry {
   syncStatus: SyncStatus;
   lastModified: number; // Unix timestamp for conflict resolution
   
-  isDemo?: boolean; // Flag to identify and clean up demo data easily
+
 }
 
 export interface Machine {

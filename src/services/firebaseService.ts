@@ -50,10 +50,14 @@ class FirebaseService {
     try {
       const entryRef = doc(this.db, 'production_entries', entry.id);
       
-      // We strip out any huge base64 strings if we want to save DB costs, 
-      // but for this scale, we can just push the whole entry.
+      // Firebase Firestore crashes if it encounters `undefined` values.
+      // We must strip undefined keys from the object.
+      const cleanEntry = Object.fromEntries(
+        Object.entries(entry).filter(([_, v]) => v !== undefined)
+      );
+
       await setDoc(entryRef, {
-        ...entry,
+        ...cleanEntry,
         _cloudSyncedAt: serverTimestamp()
       }, { merge: true });
       

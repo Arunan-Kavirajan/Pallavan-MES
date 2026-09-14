@@ -73,10 +73,7 @@ export const SyncProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       for (const p of allPending) {
         try {
-          if (!p.isDemo) {
-            // Push real entries to Firebase (no-op if emulation mode)
-            await firebaseService.syncEntryToCloud(p);
-          }
+          await firebaseService.syncEntryToCloud(p);
           await db.entries.update(p.id, { syncStatus: 'synced' });
         } catch (err) {
           console.error('Failed to sync to cloud', err);

@@ -81,23 +81,7 @@ export default function EntryList({ onEdit }: Props) {
     }
   };
 
-  const hasDemoData = entries.some(e => e.isDemo);
-
-  const handleToggleDemoData = async () => {
-    if (hasDemoData) {
-      if (window.confirm('Remove all demo data from the database?')) {
-        await StorageService.removeDemoData();
-        loadEntries();
-      }
-    } else {
-      if (window.confirm('Load realistic sample data into the database for testing?')) {
-        await StorageService.loadDemoData();
-        loadEntries();
-      }
-    }
-  };
-
-  const getHourLabel = (shift: 'A'|'B'|'C', slotId: string) => {
+    const getHourLabel = (shift: 'A'|'B'|'C', slotId: string) => {
     const slot = SHIFT_HOURS[shift]?.find(s => s.id === slotId);
     return slot ? slot.label : slotId;
   };
@@ -154,15 +138,6 @@ export default function EntryList({ onEdit }: Props) {
             <option value="ALL">All Machines</option>
             {MACHINES.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
           </select>
-
-          <button
-            onClick={handleToggleDemoData}
-            title={hasDemoData ? "Hide sample data" : "Load realistic sample data for testing"}
-            className="text-xs flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-300 rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-          >
-            {hasDemoData ? <EyeOff size={13} /> : <Eye size={13} />}
-            <span className="hidden md:inline">{hasDemoData ? 'Hide Demo Data' : 'Show Demo Data'}</span>
-          </button>
         </div>
 
       </div>
