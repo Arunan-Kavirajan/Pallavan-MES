@@ -8,6 +8,7 @@ import { calculateAcceptedQuantity, calculateRejectionPercentage, calculateAchie
 import { MACHINES, PARTS, SHIFTS, SHIFT_HOURS, REJECTION_REASONS } from '../../constants/seededData';
 import { ProductionEntry, Shift, AuditLog } from '../../types/domain';
 import LiveMetricsCard from './LiveMetricsCard';
+import ConfirmDialog from '../common/ConfirmDialog';
 import { format } from 'date-fns';
 import { Save, Send, AlertTriangle } from 'lucide-react';
 
@@ -24,6 +25,13 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    isSubmit: boolean;
+    title: string;
+    message: string;
+  }>({ isOpen: false, isSubmit: false, title: '', message: '' });
+
   // The persistent DB model
   const [existingEntry, setExistingEntry] = useState<ProductionEntry | null>(null);
 
@@ -242,7 +250,7 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
     };
   };
 
-  const handleSave = async (isSubmit: boolean) => {
+  const handleSaveClick = (isSubmit: boolean) => {
     if (duplicateWarning) {
       alert("Cannot save. " + duplicateWarning);
       return;
@@ -254,6 +262,20 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
       return;
     }
 
+    setConfirmDialog({
+      isOpen: true,
+      isSubmit,
+      title: isSubmit ? 'Submit for Approval' : 'Save Draft',
+      message: isSubmit 
+        ? 'Are you sure you want to submit this entry? It will be sent to your supervisor for review.' 
+        : 'Are you sure you want to save this as a draft? You can continue editing it later.'
+    });
+  };
+
+  const confirmSave = async () => {
+    const isSubmit = confirmDialog.isSubmit;
+    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+    
     const entryToSave = buildEntryToSave(isSubmit);
     await StorageService.saveEntry(entryToSave);
     onClose();
@@ -446,7 +468,7 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
           <>
             <button 
               type="button" 
-              onClick={() => handleSave(false)} 
+              onClick={() => handleSaveClick(false)} 
               disabled={!!duplicateWarning}
               className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none flex items-center disabled:opacity-50"
             >
@@ -454,7 +476,7 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
             </button>
             <button 
               type="button" 
-              onClick={() => handleSave(true)} 
+              onClick={() => handleSaveClick(true)} 
               disabled={!!duplicateWarning}
               className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none flex items-center disabled:opacity-50"
             >
@@ -464,6 +486,15 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
         )}
       </div>
 
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.isSubmit ? "Submit" : "Save"}
+        confirmStyle="primary"
+        onConfirm={confirmSave}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

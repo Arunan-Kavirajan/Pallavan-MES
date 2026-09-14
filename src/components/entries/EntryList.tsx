@@ -7,6 +7,8 @@ import { format } from 'date-fns';
 import { SHIFT_HOURS, MACHINES, SHIFTS } from '../../constants/seededData';
 import EntryDetailModal from './EntryDetailModal';
 import { Filter, Trash2, Database, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import ConfirmDialog from '../common/ConfirmDialog';
+import { useSync } from '../../contexts/SyncContext';
 
 interface Props {
   onEdit: (id: string) => void;
@@ -14,6 +16,7 @@ interface Props {
 
 export default function EntryList({ onEdit }: Props) {
   const { currentUser } = useAuth();
+  const { pendingCount } = useSync();
   const [entries, setEntries] = useState<ProductionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -24,11 +27,14 @@ export default function EntryList({ onEdit }: Props) {
   
   const [selectedEntry, setSelectedEntry] = useState<ProductionEntry | null>(null);
 
+  // Custom Confirmation Dialog State
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    idToDelete: string | null;
+  }>({ isOpen: false, idToDelete: null });
+
   const loadEntries = async () => {
     setLoading(true);
-    // Seed demo data if database is completely empty on first launch
-    // await StorageService.seedDemoDataIfEmpty();
-
     let all = await StorageService.getAllEntries();
     
     // RBAC logic: Operator only sees their own entries
@@ -48,7 +54,7 @@ export default function EntryList({ onEdit }: Props) {
 
   useEffect(() => {
     loadEntries();
-  }, [currentUser]);
+  }, [currentUser, pendingCount]);
 
   // Tab counts
   const counts = useMemo(() => {
@@ -76,11 +82,19 @@ export default function EntryList({ onEdit }: Props) {
     if (wasUpdated) loadEntries();
   };
 
-  const handleDeleteDraft = async (id: string, e: React.MouseEvent) => {
+  const initiateDelete = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setConfirmDialog({ isOpen: true, idToDelete: id });
+  };
+
+  const confirmDelete = async () => {
+    const id = confirmDialog.idToDelete;
+    if (!id) return;
+    
+    setConfirmDialog({ isOpen: false, idToDelete: null });
+    
     try {
-      console.log('Deleting draft:', id);
       await StorageService.deleteEntry(id);
       await loadEntries();
     } catch (err: any) {
@@ -245,7 +259,7 @@ export default function EntryList({ onEdit }: Props) {
                           {entry.status === 'Draft' && (
                             <button 
                               type="button"
-                              onClick={(e) => handleDeleteDraft(entry.id, e)} 
+                              onClick={(e) => initiateDelete(entry.id, e)} 
                               className="text-red-600 hover:text-red-800 p-2 ml-1 cursor-pointer"
                               title="Delete Draft"
                             >
@@ -282,6 +296,16 @@ export default function EntryList({ onEdit }: Props) {
           onUpdated={() => handleModalClose(true)}
         />
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Delete Draft"
+        message="Are you sure you want to delete this draft entry? This action cannot be undone."
+        confirmText="Delete"
+        confirmStyle="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDialog({ isOpen: false, idToDelete: null })}
+      />
     </>
   );
 }
