@@ -74,7 +74,12 @@ export const SyncProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       for (const p of allPending) {
         try {
           await firebaseService.syncEntryToCloud(p);
-          await db.entries.update(p.id, { syncStatus: 'synced' });
+          
+          if (p.isDeleted) {
+            await db.entries.delete(p.id);
+          } else {
+            await db.entries.update(p.id, { syncStatus: 'synced' });
+          }
         } catch (err) {
           console.error('Failed to sync to cloud', err);
           // Leaves it pending

@@ -58,8 +58,8 @@ export interface ProductionEntry {
   // Offline Sync Management
   syncStatus: SyncStatus;
   lastModified: number; // Unix timestamp for conflict resolution
-  
 
+  isDeleted?: boolean; // Soft delete flag for cloud sync
 }
 
 export interface Machine {

@@ -1,5 +1,5 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, Firestore, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { ProductionEntry } from '../types/domain';
 
 // Firebase configuration from environment variables
@@ -49,6 +49,11 @@ class FirebaseService {
 
     try {
       const entryRef = doc(this.db, 'production_entries', entry.id);
+      
+      if (entry.isDeleted) {
+        await deleteDoc(entryRef);
+        return;
+      }
       
       // Firebase Firestore crashes if it encounters `undefined` values.
       // We must strip undefined keys from the object.

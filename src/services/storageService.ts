@@ -20,32 +20,39 @@ export const StorageService = {
   },
 
   async getEntry(id: string): Promise<ProductionEntry | undefined> {
-    return await db.entries.get(id);
+    const entry = await db.entries.get(id);
+    if (entry?.isDeleted) return undefined;
+    return entry;
   },
 
   async getAllEntries(): Promise<ProductionEntry[]> {
-    return await db.entries.toArray();
+    const all = await db.entries.toArray();
+    return all.filter(e => !e.isDeleted);
   },
 
   async getEntriesByDateAndShift(date: string, shift: string): Promise<ProductionEntry[]> {
-    return await db.entries.where({ entryDate: date, shift }).toArray();
+    const entries = await db.entries.where({ entryDate: date, shift }).toArray();
+    return entries.filter(e => !e.isDeleted);
   },
 
   async checkDuplicate(machineId: string, entryDate: string, shift: string, hourSlot: string, currentId?: string): Promise<ProductionEntry | undefined> {
-    const existing = await db.entries.where({
+    const entries = await db.entries.where({
       machineId,
       entryDate,
       shift,
       hourSlot
-    }).first();
-
-    if (existing && existing.id !== currentId) {
-      return existing;
-    }
-    return undefined;
+    }).toArray();
+    
+    const existing = entries.find(e => !e.isDeleted && e.id !== currentId);
+    return existing;
   },
 
   async deleteEntry(id: string): Promise<void> {
-    await db.entries.delete(id);
+    // Soft delete to ensure sync logic catches it and deletes from Firebase
+    await db.entries.update(id, { 
+      isDeleted: true, 
+      syncStatus: 'pending',
+      lastModified: Date.now()
+    });
   }
 };
