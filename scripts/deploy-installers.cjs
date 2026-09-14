@@ -11,7 +11,7 @@ if (!fs.existsSync(downloadsDir)) {
 
 // Map electron-builder outputs to clean download names
 const filesToCopy = [
-  { prefix: 'Pallavan MES Setup', ext: '.exe', dest: 'Pallavan-MES-Windows-Setup.exe' },
+  { prefix: 'Pallavan MES Setup', ext: '.exe', dest: 'Pallavan-MES-Windows-Setup.bin' },
   { prefix: 'Pallavan MES-', ext: '.dmg', dest: 'Pallavan-MES-Mac-Setup.dmg' },
   { prefix: 'Pallavan MES-', ext: '.AppImage', dest: 'Pallavan-MES-Linux-Setup.AppImage' }
 ];

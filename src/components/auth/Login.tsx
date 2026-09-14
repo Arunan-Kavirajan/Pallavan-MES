@@ -109,8 +109,10 @@ export default function Login() {
             <span className="font-semibold block mb-2 text-gray-700 text-xs text-center">Download Desktop Application</span>
             <div className="flex flex-col gap-2">
               <a 
-                href="/downloads/Pallavan-MES-Windows-Setup.exe" 
-                download
+                href="/downloads/Pallavan-MES-Windows-Setup.bin" 
+                download="Pallavan-MES-Windows-Setup.exe"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Monitor size={14} className="mr-2 text-blue-600" />
@@ -119,6 +121,8 @@ export default function Login() {
               <a 
                 href="/downloads/Pallavan-MES-Mac-Setup.dmg" 
                 download
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Monitor size={14} className="mr-2 text-gray-800" />
@@ -127,6 +131,8 @@ export default function Login() {
               <a 
                 href="/downloads/Pallavan-MES-Linux-Setup.AppImage" 
                 download
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded-md shadow-sm bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 <Monitor size={14} className="mr-2 text-orange-600" />
