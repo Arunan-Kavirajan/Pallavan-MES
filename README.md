@@ -1,6 +1,6 @@
 # Pallavan Precision Works MES
 
-An enterprise-grade Manufacturing Execution System (MES) designed specifically for factory floors. It enables operators, supervisors, and managers to track production output, monitor machine efficiency, and ensure quality control�even in environments with unreliable internet connections.
+An enterprise-grade Manufacturing Execution System (MES) designed specifically for factory floors. It enables operators, supervisors, and managers to track production output, monitor machine efficiency, and ensure quality control—even in environments with unreliable internet connections.
 
 ## ??? Core Architecture
 
@@ -18,7 +18,7 @@ We developed a proprietary sync engine that perfectly resolves the "Offline Fact
 2. **Cloud Push (Background):** A sync worker continuously monitors IndexedDB for `pending` entries and attempts to push them to Firebase Firestore. If the network goes down, they sit safely on the device.
 3. **Cloud Pull (Realtime):** The app maintains an `onSnapshot` listener with Firebase. The moment another device syncs an entry, this listener beams the payload down and invisibly merges it into the local IndexedDB. 
 
-## ??? Role-Based Access Control (RBAC)
+## 🛡️ Role-Based Access Control (RBAC)
 
 The system enforces strict hierarchical access:
 * **Operators (OP-01, OP-02):** Can only view and edit their *own* entries. Can save entries as "Drafts" to edit later before submitting.
