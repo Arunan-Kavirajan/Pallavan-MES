@@ -3,10 +3,10 @@
 A production-grade, offline-first Manufacturing Execution System (MES) application built for the ApexFlow Technologies Technical Assignment.
 
 ## Features Implemented
-- **Full Specification Coverage**: Complete form, validation rules, live calculations, and role-based access control.
-- **Offline-First Architecture**: Uses Dexie.js (IndexedDB) for robust offline capture, caching, and network sync queueing.
-- **Offline Simulation Mode**: A built-in toggle in the Navbar lets you simulate network loss and test offline functionality instantly without touching your OS settings.
-- **Smart Validation Engine**: Enforces all edge cases (division by zero, negative integers, 60-min downtime limits, and dynamic 10% rejection remark rules).
+- **Full Specification Coverage**: Complete form, validation rules, live calculations, and role-based access control (Operator, Supervisor).
+- **Offline-First PWA Architecture**: Operates 100% offline via IndexedDB, and is fully installable as a standalone application on mobile and desktop devices.
+- **Dynamic Cloud Sync Engine**: Runs fully locally out-of-the-box, but seamlessly connects to Firebase. When online, it actively beams local data to the cloud in the background. If the network drops, it queues changes and bursts them to the cloud upon reconnection.
+- **Smart Validation & Auto-Fill**: Enforces all edge cases (division by zero, negative integers, 60-min downtime limits, and dynamic 10% rejection rules). Includes a Quick-Copy UI to instantly pull previous shift entry data to speed up workflows.
 - **Audit Trails & State Machine**: Immutable audit logs on every transition (`Draft` -> `Submitted` -> `Approved` / `Returned`).
 - **Stretch Goals Achieved**: 
   1. **Digital Signatures**: HTML5 Canvas signature capture for Supervisor approvals.
@@ -15,7 +15,7 @@ A production-grade, offline-first Manufacturing Execution System (MES) applicati
 
 ## Setup & Run Instructions
 
-This project runs with zero external backend or cloud dependencies (no Firebase API key hassle) making it effortless to evaluate.
+This project is built to evaluate flawlessly. It defaults to a powerful local-first mode, meaning it requires **zero external cloud configuration** to boot up and test.
 
 ### Prerequisites
 - Node.js (v18 or higher)
