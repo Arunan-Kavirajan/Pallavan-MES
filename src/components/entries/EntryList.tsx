@@ -34,6 +34,9 @@ export default function EntryList({ onEdit }: Props) {
     // RBAC logic: Operator only sees their own entries
     if (currentUser.role === 'Operator') {
       all = all.filter(e => e.operatorId === currentUser.id);
+    } else {
+      // Supervisors and Managers should NOT see Drafts. Drafts are private to operators until submitted.
+      all = all.filter(e => e.status !== 'Draft');
     }
     
     // Sort descending by last modified
