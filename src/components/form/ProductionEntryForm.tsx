@@ -205,8 +205,9 @@ export default function ProductionEntryForm({ entryId, onClose }: Props) {
     }
 
     const newStatus = isSubmit ? 'Submitted' : 'Draft';
-    // If not online, and we are saving, it becomes pending sync.
-    const newSyncStatus = effectivelyOnline ? 'synced' : 'pending';
+    // ALWAYS set to pending. The SyncContext hook will detect the write, 
+    // push it to Firebase, and then change it to 'synced'.
+    const newSyncStatus = 'pending';
 
     return {
       id: existingEntry?.id || uuidv4(),
