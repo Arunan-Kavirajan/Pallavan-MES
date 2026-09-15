@@ -44,7 +44,7 @@ npm run dev
 npm run build
 ```
 
-## ?? Demo Credentials
+##  Demo Credentials
 * Universal PIN: `apex123`
 * Operator IDs: `OP-01`, `OP-02`
 * Supervisor ID: `SUP-01`
