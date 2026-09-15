@@ -21,7 +21,7 @@ export default function EntryDetailModal({ entry, onClose, onUpdated }: Props) {
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [showSignatureModal, setShowSignatureModal] = useState(false);
 
-  const slotLabel = SHIFT_HOURS[entry.shift].find(s => s.id === entry.hourSlot)?.label || entry.hourSlot;
+  const slotLabel = SHIFT_HOURS[entry.shift]?.find(s => s.id === entry.hourSlot)?.label || entry.hourSlot || 'Unknown';
 
   const safeFormatDate = (dateStr: string, formatStr: string) => {
     try {
@@ -136,7 +136,7 @@ export default function EntryDetailModal({ entry, onClose, onUpdated }: Props) {
 
              <h3 className="font-semibold text-gray-900 mb-4 border-b border-gray-200 pb-2">Audit Trail Timeline</h3>
              <div className="relative border-l-2 border-gray-200 ml-3 space-y-6 max-h-64 overflow-y-auto pr-2 pb-2">
-               {entry.auditTrail.map((log, idx) => {
+               {entry.auditTrail?.map((log, idx) => {
                  let bgColor = 'bg-gray-100 border-gray-300 text-gray-500';
                  if (log.action === 'CREATED') bgColor = 'bg-blue-100 border-blue-300 text-blue-600';
                  if (log.action === 'SUBMITTED') bgColor = 'bg-purple-100 border-purple-300 text-purple-600';
