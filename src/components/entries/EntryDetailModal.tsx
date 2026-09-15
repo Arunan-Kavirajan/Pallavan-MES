@@ -23,6 +23,15 @@ export default function EntryDetailModal({ entry, onClose, onUpdated }: Props) {
 
   const slotLabel = SHIFT_HOURS[entry.shift].find(s => s.id === entry.hourSlot)?.label || entry.hourSlot;
 
+  const safeFormatDate = (dateStr: string, formatStr: string) => {
+    try {
+      if (!dateStr) return 'N/A';
+      return format(new Date(dateStr), formatStr);
+    } catch (e) {
+      return dateStr || 'Invalid';
+    }
+  };
+
   const handleApprove = async (signatureDataUrl: string) => {
     const updated = { ...entry };
     updated.status = 'Approved';
@@ -68,9 +77,9 @@ export default function EntryDetailModal({ entry, onClose, onUpdated }: Props) {
         <div className="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
           <div>
             <h2 className="text-xl font-bold text-gray-900">{entry.machineId}</h2>
-            <p className="text-gray-500 text-sm">
-              {format(new Date(entry.entryDate), 'EEEE, MMMM do yyyy')} • Shift {entry.shift} • {slotLabel}
-            </p>
+              <p className="text-gray-500 text-sm">
+                {safeFormatDate(entry.entryDate, 'EEEE, MMMM do yyyy')} • Shift {entry.shift} • {slotLabel}
+              </p>
           </div>
           <div className="text-right">
             <StatusBadge status={entry.status} />
@@ -149,7 +158,7 @@ export default function EntryDetailModal({ entry, onClose, onUpdated }: Props) {
                            </span>
                          </div>
                          <span className="text-[10px] text-gray-400 font-mono">
-                           {format(new Date(log.timestamp), 'MMM dd, HH:mm:ss')}
+                           {safeFormatDate(log.timestamp, 'MMM dd, HH:mm:ss')}
                          </span>
                        </div>
                        {log.notes && (

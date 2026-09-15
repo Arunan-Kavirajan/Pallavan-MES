@@ -109,6 +109,15 @@ export default function EntryList({ onEdit }: Props) {
     return slot ? slot.label : slotId;
   };
 
+  const safeFormatDate = (dateStr: string) => {
+    try {
+      if (!dateStr) return 'N/A';
+      return format(new Date(dateStr), 'MMM dd, yyyy');
+    } catch (e) {
+      return dateStr || 'Invalid';
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-md p-6 animate-pulse">
@@ -220,7 +229,7 @@ export default function EntryList({ onEdit }: Props) {
                   className="hover:bg-blue-50/40 cursor-pointer transition-colors"
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-semibold text-gray-900">{format(new Date(entry.entryDate), 'MMM dd, yyyy')}</div>
+                    <div className="font-semibold text-gray-900">{safeFormatDate(entry.entryDate)}</div>
                     <div className="text-xs text-gray-500">Shift {entry.shift} • {getHourLabel(entry.shift, entry.hourSlot)}</div>
                   </td>
                   
