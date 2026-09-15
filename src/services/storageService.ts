@@ -55,7 +55,14 @@ export const StorageService = {
     const corruptedIds = all.filter(e => !e || !e.entryDate || !e.machineId || !e.shift || !e.status).map(e => e.id);
     if (corruptedIds.length > 0) {
       console.warn('Purging completely corrupted local records:', corruptedIds);
-      await db.entries.bulkDelete(corruptedIds);
+      // Run the delete OUTSIDE the readonly LiveQuery transaction!
+      setTimeout(async () => {
+        try {
+          await db.entries.bulkDelete(corruptedIds);
+        } catch (err) {
+          console.error('Failed to purge corrupted local records:', err);
+        }
+      }, 0);
     }
     
     return valid.filter(e => !e.isDeleted);
