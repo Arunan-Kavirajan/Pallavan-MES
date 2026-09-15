@@ -14,17 +14,51 @@ export const SyncProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [pendingCount, setPendingCount] = useState(0);
 
-  // Real offline detection
+  // Real offline detection (Cross-browser robust for Zen/Firefox)
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    let mounted = true;
+    
+    const checkRealConnection = async () => {
+      // Fast path: OS explicitly tells us we're offline
+      if (!navigator.onLine) {
+        if (mounted) setIsOnline(false);
+        return;
+      }
+      
+      // Slow path: OS says online, but Zen/Firefox might miss events or have no real internet.
+      // Ping an external asset bypassing CORS and Service Worker
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        await fetch('https://www.google.com/favicon.ico?' + Date.now(), { 
+          mode: 'no-cors', 
+          cache: 'no-store',
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        if (mounted) setIsOnline(true);
+      } catch (error) {
+        if (mounted) setIsOnline(false);
+      }
+    };
+
+    const handleOnline = () => checkRealConnection();
+    const handleOffline = () => { if (mounted) setIsOnline(false); };
     
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
     
+    // Poll every 5 seconds for browsers that drop OS events (like Zen)
+    const interval = setInterval(checkRealConnection, 5000);
+    checkRealConnection(); // Initial check
+    
     return () => {
+      mounted = false;
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      clearInterval(interval);
     };
   }, []);
 
