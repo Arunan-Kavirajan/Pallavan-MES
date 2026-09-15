@@ -23,30 +23,12 @@ export default function SummaryView() {
     return await StorageService.getAllEntries();
   });
   
-  if (entries === undefined) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4 animate-pulse"></div>
-          <div className="flex gap-4">
-            <div className="h-10 bg-gray-200 rounded w-1/3 animate-pulse"></div>
-            <div className="h-10 bg-gray-200 rounded w-1/3 animate-pulse"></div>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="bg-white rounded-lg shadow p-5 border-l-4 border-gray-200 h-28 animate-pulse"></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-  
+  const safeEntries = entries || [];
   const loading = entries === undefined;
 
   // Filter entries across chosen date range and status (Approved or Submitted)
   const filteredEntries = useMemo(() => {
-    return entries.filter(e => {
+    return safeEntries.filter(e => {
       // Must be submitted or approved to be counted in official analytics
       if (e.status !== 'Approved' && e.status !== 'Submitted') return false;
       
@@ -138,7 +120,24 @@ export default function SummaryView() {
 
   const PIE_COLORS = ['#ef4444', '#f97316', '#eab308', '#06b6d4', '#8b5cf6', '#ec4899'];
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading summary view...</div>;
+  if (loading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="h-6 bg-gray-200 rounded w-1/4 mb-4 animate-pulse"></div>
+          <div className="flex gap-4">
+            <div className="h-10 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="bg-white rounded-lg shadow p-5 border-l-4 border-gray-200 h-28 animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">

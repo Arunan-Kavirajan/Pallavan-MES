@@ -49,45 +49,36 @@ export default function EntryList({ onEdit }: Props) {
     return all;
     }, [currentUser]);
 
-  if (entries === undefined) {
-    return (
-      <div className="bg-white rounded-xl shadow-md p-6 animate-pulse">
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="h-10 bg-gray-200 rounded-lg w-full md:w-1/3"></div>
-          <div className="h-10 bg-gray-200 rounded-lg w-full md:w-1/3"></div>
-          <div className="h-10 bg-gray-200 rounded-lg w-full md:w-1/3"></div>
-        </div>
-        <div className="space-y-4">
-          {[1,2,3,4,5].map(i => (
-            <div key={i} className="h-16 bg-gray-100 rounded-lg w-full"></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
+  const safeEntries = entries || [];
   const loading = entries === undefined;
 
   // Tab counts
   const counts = useMemo(() => {
     return {
-      ALL: entries.length,
-      Draft: entries.filter(e => e.status === 'Draft').length,
-      Submitted: entries.filter(e => e.status === 'Submitted').length,
-      Approved: entries.filter(e => e.status === 'Approved').length,
-      Returned: entries.filter(e => e.status === 'Returned').length,
+      ALL: safeEntries.length,
+      Draft: safeEntries.filter(e => e.status === 'Draft').length,
+      Submitted: safeEntries.filter(e => e.status === 'Submitted').length,
+      Approved: safeEntries.filter(e => e.status === 'Approved').length,
+      Returned: safeEntries.filter(e => e.status === 'Returned').length,
     };
-  }, [entries]);
+  }, [safeEntries]);
 
-  // Filtered entries
+  // Filtered array
   const filtered = useMemo(() => {
-    return entries.filter(e => {
-      if (statusFilter !== 'ALL' && e.status !== statusFilter) return false;
-      if (shiftFilter !== 'ALL' && e.shift !== shiftFilter) return false;
-      if (machineFilter !== 'ALL' && e.machineId !== machineFilter) return false;
-      return true;
-    });
-  }, [entries, statusFilter, shiftFilter, machineFilter]);
+    let result = [...safeEntries];
+
+    if (statusFilter !== 'ALL') {
+      result = result.filter(e => e.status === statusFilter);
+    }
+    if (shiftFilter !== 'ALL') {
+      result = result.filter(e => e.shift === shiftFilter);
+    }
+    if (machineFilter !== 'ALL') {
+      result = result.filter(e => e.machineId === machineFilter);
+    }
+
+    return result;
+  }, [safeEntries, statusFilter, shiftFilter, machineFilter]);
 
   const handleModalClose = (wasUpdated: boolean) => {
     setSelectedEntry(null);
@@ -118,7 +109,22 @@ export default function EntryList({ onEdit }: Props) {
     return slot ? slot.label : slotId;
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading entries...</div>;
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6 animate-pulse">
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="h-10 bg-gray-200 rounded-lg w-full md:w-1/3"></div>
+          <div className="h-10 bg-gray-200 rounded-lg w-full md:w-1/3"></div>
+          <div className="h-10 bg-gray-200 rounded-lg w-full md:w-1/3"></div>
+        </div>
+        <div className="space-y-4">
+          {[1,2,3,4,5].map(i => (
+            <div key={i} className="h-16 bg-gray-100 rounded-lg w-full"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
