@@ -26,11 +26,17 @@ export const StorageService = {
   },
 
   async upsertCloudEntries(cloudEntries: ProductionEntry[]): Promise<void> {
+    // 1. Rigorous Data Validation: Filter out completely broken/corrupted entries
+    // A valid entry MUST have an entryDate, machineId, shift, and status.
+    const validCloudEntries = cloudEntries.filter(e => 
+      e && e.id && e.entryDate && e.machineId && e.shift && e.status
+    );
+
     // Fetch all currently pending entries to protect them from being overwritten
     const pending = await db.entries.where('syncStatus').equals('pending').toArray();
     const pendingIds = new Set(pending.map(e => e.id));
 
-    const toUpsert = cloudEntries.filter(e => !pendingIds.has(e.id)).map(e => {
+    const toUpsert = validCloudEntries.filter(e => !pendingIds.has(e.id)).map(e => {
       // Ensure cloud entries are marked as synced locally
       return { ...e, syncStatus: 'synced' as const };
     });
@@ -42,7 +48,17 @@ export const StorageService = {
 
   async getAllEntries(): Promise<ProductionEntry[]> {
     const all = await db.entries.toArray();
-    return all.filter(e => !e.isDeleted);
+    
+    // Purge corrupted local records that might have slipped in previously
+    const valid = all.filter(e => e && e.entryDate && e.machineId && e.shift && e.status);
+    
+    const corruptedIds = all.filter(e => !e || !e.entryDate || !e.machineId || !e.shift || !e.status).map(e => e.id);
+    if (corruptedIds.length > 0) {
+      console.warn('Purging completely corrupted local records:', corruptedIds);
+      await db.entries.bulkDelete(corruptedIds);
+    }
+    
+    return valid.filter(e => !e.isDeleted);
   },
 
   async getEntriesByDateAndShift(date: string, shift: string): Promise<ProductionEntry[]> {

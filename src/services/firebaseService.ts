@@ -79,20 +79,28 @@ class FirebaseService {
     if (!this.isEnabled || !this.db) return () => {};
 
     const q = collection(this.db, 'production_entries');
-    return onSnapshot(q, (snapshot) => {
-      const entries: ProductionEntry[] = [];
-      snapshot.forEach(doc => {
-        const data = doc.data() as ProductionEntry;
-        // Explicitly enforce the ID from the document key
-        data.id = doc.id;
-        // Strip Firebase Timestamp objects because they cause DataError in IndexedDB
-        if ('_cloudSyncedAt' in data) {
-          delete (data as any)._cloudSyncedAt;
-        }
-        entries.push(data);
-      });
-      onUpdate(entries);
-    }, (error) => {
+      return onSnapshot(q, (snapshot) => {
+        const entries: ProductionEntry[] = [];
+        snapshot.forEach(docSnap => {
+          const data = docSnap.data() as ProductionEntry;
+          
+          // Auto-delete completely corrupted records directly from the cloud
+          if (!data.entryDate || !data.machineId || !data.shift || !data.status) {
+            console.warn(`[Firebase] Destroying irreparably corrupted cloud record: ${docSnap.id}`);
+            deleteDoc(doc(this.db!, 'production_entries', docSnap.id)).catch(console.error);
+            return; // Skip adding to Dexie
+          }
+
+          // Explicitly enforce the ID from the document key
+          data.id = docSnap.id;
+          // Strip Firebase Timestamp objects because they cause DataError in IndexedDB
+          if ('_cloudSyncedAt' in data) {
+            delete (data as any)._cloudSyncedAt;
+          }
+          entries.push(data);
+        });
+        onUpdate(entries);
+      }, (error) => {
       console.error('[Firebase] Snapshot sync error:', error);
     });
   }
