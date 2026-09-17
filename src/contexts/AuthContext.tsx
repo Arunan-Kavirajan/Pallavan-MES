@@ -17,16 +17,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Load session from local storage on mount
   useEffect(() => {
     const saved = localStorage.getItem('apex_session');
-    if (saved) {
-      try {
-        const user = JSON.parse(saved);
-        // Verify user still exists in seeded data
-        if (SEEDED_USERS.find(u => u.id === user.id)) {
-          setCurrentUser(user);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // SECURITY FIX: Do not trust the role inside localStorage!
+          // We only use the ID, and re-fetch their true role from the master list.
+          // This prevents someone from editing localStorage to become a "Manager".
+          const realUser = SEEDED_USERS.find(u => u.id === parsed.id);
+          if (realUser) {
+            setCurrentUser(realUser);
+          }
+        } catch (e) {
+          console.error("Failed to parse session", e);
         }
-      } catch (e) {
-        // ignore bad session
-      }
     }
     setIsLoaded(true);
   }, []);

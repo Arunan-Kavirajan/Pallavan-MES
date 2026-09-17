@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Server-Side Validation & RBAC (Role-Based Access Control)
+    match /production_entries/{entryId} {
+      
+      // 1. Ensure the user is actually authenticated via Firebase Auth (not localStorage)
+      // allow read, write: if request.auth != null;
+      // Note: Firebase Auth needs to be enabled in the console to strictly enforce this.
+      // For now, we simulate the lock down by enforcing schema and state machines.
+      
+      allow read: if true; // Temporarily open for read until Firebase Auth is enabled
+      
+      // 2. Server-side validation: The database rejects malformed data.
+      allow create, update: if 
+        // Must have required fields
+        request.resource.data.keys().hasAll(['id', 'machineId', 'partNumber', 'operatorId', 'shift', 'status', 'entryDate', 'produced', 'rejected']) &&
+        
+        // Status must be one of the exact state machine values
+        request.resource.data.status in ['Draft', 'Submitted', 'Approved', 'Returned'] &&
+        
+        // Physical constraints enforced by the server
+        request.resource.data.produced is number &&
+        request.resource.data.produced >= 0 &&
+        request.resource.data.rejected is number &&
+        request.resource.data.rejected >= 0 &&
+        request.resource.data.rejected <= request.resource.data.produced &&
+        
+        // Prevent malicious role elevation (If using Firebase Custom Claims)
+        // (request.auth.token.role == "Manager" || request.auth.token.role == "Supervisor" || request.auth.uid == request.resource.data.operatorId);
+        true; // Placeholder until Firebase Auth is enabled
+        
+      // 3. Stop the "Janitor": Clients cannot hard-delete records.
+      // If a record is invalid, it stays in the database.
+      allow delete: if false;
+    }
+  }
+}

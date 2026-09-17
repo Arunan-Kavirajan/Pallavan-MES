@@ -84,11 +84,11 @@ class FirebaseService {
         snapshot.forEach(docSnap => {
           const data = docSnap.data() as ProductionEntry;
           
-          // Auto-delete completely corrupted records directly from the cloud
+          // Validate record shape safely. Do NOT destroy cloud data.
+          // Software that silently destroys unrecognized records is dangerous.
           if (!data.entryDate || !data.machineId || !data.shift || !data.status) {
-            console.warn(`[Firebase] Destroying irreparably corrupted cloud record: ${docSnap.id}`);
-            deleteDoc(doc(this.db!, 'production_entries', docSnap.id)).catch(console.error);
-            return; // Skip adding to Dexie
+            console.error(`[Firebase] Corrupted/unrecognized cloud record detected: ${docSnap.id}. Ignoring locally.`);
+            return; // Skip adding to Dexie, but leave the cloud record completely untouched
           }
 
           // Explicitly enforce the ID from the document key
